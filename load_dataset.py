@@ -15,8 +15,7 @@ def normalized(image):
 def dowmsampling(image, h_ratio, w_ratio, flag = True):
     h, w = image.shape[:2]
     if flag:
-        lr_patch = cv2.resize(image, (w // w_ratio, h // h_ratio),
-                              interpolation=cv2.INTER_CUBIC)
+        lr_patch = image[::h_ratio, ::w_ratio]
     else:
         lr_patch = np.zeros((h, w), dtype=image.dtype)
         lr_patch[::h_ratio, ::w_ratio] = image[::h_ratio, ::w_ratio]
