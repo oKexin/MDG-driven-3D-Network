@@ -18,8 +18,7 @@ def normalized(image):
 def dowmsampling(image, h_ratio, w_ratio, flag = True):
     h, w = image.shape[:2]
     if flag:
-        lr_patch = cv2.resize(image, (w // w_ratio, h // h_ratio),
-                              interpolation=cv2.INTER_CUBIC)
+        lr_patch = image[::h_ratio, ::w_ratio]
     else:
         lr_patch = np.zeros((h, w), dtype=image.dtype)
         lr_patch[::h_ratio, ::w_ratio] = image[::h_ratio, ::w_ratio]
@@ -36,9 +35,9 @@ def upsampling(image, h_ratio, w_ratio, flag = True):
     return sr_patch
 
 if __name__ == '__main__':
-    scale_factor = 12
+    scale_factor = 8
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model_index = 1 #1-Proposed,2-FD_Unet,3-SRRDN,4-SRGAN,5-bicubic,6-bilinear
+    model_index = 3 #1-Proposed,2-FD_Unet,3-SRRDN,4-SRGAN,5-bicubic,6-bilinear
     Dataset_Path = 'Result/test/data'
     Sample_Flag = True
     if model_index == 1:
