@@ -8,21 +8,12 @@ from utilis import PSNRCalculator
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 import lpips
 import warnings
+import torch.nn.functional as F
 import os
 warnings.filterwarnings("ignore", category=UserWarning)
 
 def normalized(image):
     return (image - image.min()) / (image.max() - image.min())
-
-def dowmsampling(image, h_ratio, w_ratio, flag = True):
-    h, w = image.shape[:2]
-    if flag:
-        lr_patch = image[::h_ratio, ::w_ratio]
-    else:
-        lr_patch = np.zeros((h, w), dtype=image.dtype)
-        lr_patch[::h_ratio, ::w_ratio] = image[::h_ratio, ::w_ratio]
-    return lr_patch
-
 
 if __name__ == '__main__':
     scale_factor = 8

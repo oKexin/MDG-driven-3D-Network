@@ -20,6 +20,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def get_all_folders(path):
     folder_paths = []
     for root, dirs, files in os.walk(path):
+        # root 是当前遍历到的目录路径
+        # dirs 是当前目录下的子文件夹列表
         for directory in dirs:
             folder_path = os.path.join(root, directory)
             folder_paths.append(folder_path)
@@ -71,7 +73,8 @@ if __name__ == '__main__':
         os.makedirs(opt.out)
     except OSError:
         pass
-    # TensorBoard
+    # 初始化TensorBoard写入器
+    # 生成唯一的实验文件夹名称（包含时间戳和关键参数）
     timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     experiment_name = f"exp_{timestamp}"
     log_dir = os.path.join("runs", experiment_name)
@@ -119,10 +122,10 @@ if __name__ == '__main__':
     optim_generator = optim.AdamW(generator.parameters(), lr=opt.generatorLR, weight_decay=0.0001)
     optim_discriminator = optim.AdamW(discriminator.parameters(), lr=opt.discriminatorLR, weight_decay=0.001)
     feat_criterion = nn.MSELoss().to(device)
-    l_fea_w = 0.05
-    l_adv_w = 0.01
+    l_fea_w = 0.05 # 感知损失权重
+    l_adv_w = 0.01 # 对抗损失权重
     ssim_weight = 0.5
-    l_fidelity_w = 1.0
+    l_fidelity_w = 1.0# 像素保真度损失权重
     vgg_extractor = VGGFeatureExtractor(layer_index=7).to(device)
     generator_losses = []
     # generator_adv_losses = []
@@ -140,35 +143,36 @@ if __name__ == '__main__':
         mean_generator_total_loss = 0.0
         mean_discriminator_loss = 0.0
         for batch_idx, (lr_seq, hr_target) in enumerate(train_loader):
-
+            # 训练判别器
             for param in discriminator.parameters():
-                param.requires_grad = True
+                param.requires_grad = True  # 解冻判别器参数
             optim_discriminator.zero_grad()
             high_res_real = hr_target.to(device)
             high_res_fake = generator(lr_seq.to(device)).detach()
             pred_d_real = discriminator(high_res_real)
             pred_d_fake = discriminator(high_res_fake)
             discriminator_loss_gp = gradient_penalty(discriminator, high_res_real, high_res_fake)
-
+            # 判别器损失
             d_loss = -torch.mean(pred_d_real) + torch.mean(pred_d_fake) + 10 * discriminator_loss_gp
             d_loss.backward()
             optim_discriminator.step()
             mean_discriminator_loss += d_loss.item()
 
+            # 训练生成器
             for param in discriminator.parameters():
                 param.requires_grad = False  # 冻结判别器参数
             optim_generator.zero_grad()
             high_res_fake = generator(lr_seq.to(device))
-
+            # 像素保真度损失
             fidelity_loss = pixel_criterion(high_res_fake, high_res_real) + ssim_weight * ssim_criterion(high_res_fake, high_res_real)
-
+            # 对抗损失
             pred_g_fake = discriminator(high_res_fake)
             g_adv_loss = -torch.mean(pred_g_fake)
-
+            # 感知损失
             fake_features = vgg_extractor(high_res_fake)
             real_features = vgg_extractor(high_res_real)
             feat_loss = feat_criterion(fake_features, real_features)
-
+            # 总损失
             generator_total_loss = l_fidelity_w * fidelity_loss + l_adv_w * g_adv_loss + l_fea_w * feat_loss
             generator_total_loss.backward()
             optim_generator.step()
@@ -177,6 +181,7 @@ if __name__ == '__main__':
             mean_adversarial_loss += l_adv_w * g_adv_loss.item()
             mean_feat_loss += l_fea_w * feat_loss.item()
 
+        # 计算Epoch平均Loss
         mean_discriminator_loss = mean_discriminator_loss / len_train
         mean_generator_total_loss = mean_generator_total_loss / len_train
         mean_fidelity_loss = mean_fidelity_loss / len_train

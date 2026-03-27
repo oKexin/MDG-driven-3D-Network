@@ -15,22 +15,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 def normalized(image):
     return (image - image.min()) / (image.max() - image.min())
 
-def dowmsampling(image, h_ratio, w_ratio, flag = True):
-    h, w = image.shape[:2]
-    if flag:
-        lr_patch = image[::h_ratio, ::w_ratio]
-    else:
-        lr_patch = np.zeros((h, w), dtype=image.dtype)
-        lr_patch[::h_ratio, ::w_ratio] = image[::h_ratio, ::w_ratio]
-    return lr_patch
-
-
 if __name__ == '__main__':
     scale_factor = 12
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     generator = VSRRDN(upscale_factor=scale_factor).to(device)
     generator.eval()
-    generator.load_state_dict(torch.load('Result/proposed_{}x_2.pth'.format(scale_factor), map_location=device))
+    generator.load_state_dict(torch.load('Result/proposed_{}x.pth'.format(scale_factor), map_location=device))
     transform = transforms.Compose([
         transforms.ToTensor(),
     ])
